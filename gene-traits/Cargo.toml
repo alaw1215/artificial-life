@@ -1,0 +1,14 @@
+[package]
+name = "gene_traits"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+concat-idents = "1.1.5"
+hashed-type-def = { version = "0.1.2", features = ["derive"] }
+inventory = "0.3.20"
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+rand = "0.9.1"
+rand_pcg = "0.9.0"
+rand_seeder = "0.4.0"

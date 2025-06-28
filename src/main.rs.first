@@ -1,0 +1,230 @@
+use bevy::{color::palettes::css::*, prelude::*};
+use bevy_vector_shapes::prelude::*;
+
+use std::collections::HashMap;
+
+#[derive(Default)]
+struct TransmitterLevels {
+    seratonin: u32,
+    dopamine: u32,
+    epinephrine: u32,
+    norepinephrine: u32,
+    gaba: u32,
+    glycine: u32,
+    glutamate: u32,
+    histamine: u32,
+    endorphine: u32,
+}
+
+#[derive(Component)]
+struct NeuronEnvironment {
+    levels: TransmitterLevels,
+}
+
+#[derive(Component)]
+struct NeuronEnvironmentUpdate {
+    decay_function: fn(env: &mut NeuronEnvironment, time_delta: f32),
+    replenish_function: fn(entity: Entity, nn: &NeuralNetworkResource, env: &mut NeuronEnvironment),
+}
+
+#[derive(Component)]
+struct Activation {
+    activation: fn(env: &NeuronEnvironment) -> f32,
+}
+
+#[derive(Component, Default)]
+struct Position {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+#[derive(Resource)]
+struct NeuralNetworkResource {
+    connection_map: HashMap<Entity, Vec<Entity>>,
+    activation_map: HashMap<Entity, f32>,
+}
+
+fn activation_system(
+    mut nn: ResMut<NeuralNetworkResource>,
+    query: Query<(Entity, &Activation, &NeuronEnvironment)>,
+) {
+    for (id, a, e) in &query {
+        let activation = (a.activation)(e);
+        println!("Current activation for {} is {}", &id, &activation);
+        nn.activation_map.insert(id, activation);
+    }
+}
+
+fn decay_neurotransmitters(
+    time: Res<Time>,
+    mut query: Query<(&mut NeuronEnvironment, &NeuronEnvironmentUpdate)>,
+) {
+    let time_delta = time.delta_secs();
+    for (mut env, env_updater) in &mut query {
+        (env_updater.decay_function)(&mut env, time_delta);
+    }
+}
+
+fn activation_propagation_system(
+    nn: Res<NeuralNetworkResource>,
+    mut query: Query<(Entity, &mut NeuronEnvironment, &NeuronEnvironmentUpdate)>,
+) {
+    for (entity, mut env, env_updater) in query.iter_mut() {
+        println!(
+            "Current dopamine level for {} is {}",
+            entity, env.levels.dopamine
+        );
+        (env_updater.replenish_function)(entity, &nn, &mut env);
+    }
+}
+
+fn draw_neural_network(
+    mut painter: ShapePainter,
+    nn: Res<NeuralNetworkResource>,
+    query: Query<(Entity, &Position)>,
+) {
+    for (e, p) in &query {
+        let activation = nn.activation_map.get(&e).unwrap_or(&0.0);
+        let scale = activation / (1. + activation);
+        println!("Scale = {}", scale);
+        painter.set_translation(Vec3::new(p.x, p.y, p.z));
+        painter.set_color(GREEN * (1. - scale) + RED * scale);
+        painter.circle(10.0);
+    }
+}
+
+fn startup(mut commands: Commands) {
+    commands.spawn(Camera2d);
+    let neuron1 = commands
+        .spawn((
+            Activation {
+                activation: |nenv: &NeuronEnvironment| -> f32 {
+                    return nenv.levels.dopamine as f32;
+                },
+            },
+            NeuronEnvironment {
+                levels: TransmitterLevels {
+                    norepinephrine: 1,
+                    dopamine: 10,
+                    seratonin: 1,
+                    ..default()
+                },
+            },
+            NeuronEnvironmentUpdate {
+                decay_function: |nenv: &mut NeuronEnvironment, time_delta: f32| {
+                    nenv.levels.dopamine = (nenv.levels.dopamine as f32 - time_delta * 0.1)
+                        .clamp(0.0, f32::INFINITY)
+                        as u32;
+                    nenv.levels.seratonin = (nenv.levels.seratonin as f32 - time_delta * 0.1)
+                        .clamp(0.0, f32::INFINITY)
+                        as u32;
+                },
+                replenish_function:
+                    |entity: Entity, nn: &NeuralNetworkResource, nenv: &mut NeuronEnvironment| {
+                        if let Some(inputs) = nn.connection_map.get(&entity) {
+                            let activation_sum = inputs
+                                .iter()
+                                .fold(0.0, |acc, e| acc + nn.activation_map.get(e).unwrap_or(&0.0));
+
+                            nenv.levels.dopamine = (nenv.levels.dopamine as f32
+                                + activation_sum * 2.0)
+                                .clamp(0.0, f32::INFINITY)
+                                as u32;
+                            nenv.levels.seratonin = (nenv.levels.seratonin as f32
+                                - activation_sum * 0.05)
+                                .clamp(0.0, f32::INFINITY)
+                                as u32;
+                        }
+                    },
+            },
+            Position {
+                x: 0.0,
+                y: 20.0,
+                z: 0.0,
+            },
+        ))
+        .id();
+    let neuron2 = commands
+        .spawn((
+            Activation {
+                activation: |nenv: &NeuronEnvironment| -> f32 {
+                    return nenv.levels.dopamine as f32;
+                },
+            },
+            NeuronEnvironment {
+                levels: TransmitterLevels {
+                    norepinephrine: 1,
+                    dopamine: 2,
+                    seratonin: 1,
+                    ..default()
+                },
+            },
+            NeuronEnvironmentUpdate {
+                decay_function: |nenv: &mut NeuronEnvironment, time_delta: f32| {
+                    nenv.levels.dopamine = (nenv.levels.dopamine as f32 - time_delta * 18.0)
+                        .clamp(0.0, f32::INFINITY)
+                        as u32;
+                    nenv.levels.seratonin = (nenv.levels.seratonin as f32 - time_delta * 0.1)
+                        .clamp(0.0, f32::INFINITY)
+                        as u32;
+                },
+                replenish_function:
+                    |entity: Entity, nn: &NeuralNetworkResource, nenv: &mut NeuronEnvironment| {
+                        if let Some(inputs) = nn.connection_map.get(&entity) {
+                            let activation_sum = inputs
+                                .iter()
+                                .fold(0.0, |acc, e| acc + nn.activation_map.get(e).unwrap_or(&0.0));
+
+                            nenv.levels.dopamine = (nenv.levels.dopamine as f32
+                                + activation_sum * 0.2)
+                                .clamp(0.0, f32::INFINITY)
+                                as u32;
+                            nenv.levels.seratonin = (nenv.levels.seratonin as f32
+                                - activation_sum * 0.05)
+                                .clamp(0.0, f32::INFINITY)
+                                as u32;
+                        }
+                    },
+            },
+            Position {
+                x: 50.0,
+                y: 20.0,
+                z: 0.0,
+            },
+        ))
+        .id();
+
+    let mut nn: HashMap<Entity, Vec<Entity>> = HashMap::new();
+
+    let mut activations: HashMap<Entity, f32> = HashMap::new();
+
+    nn.insert(neuron2, vec![neuron1, neuron2]);
+
+    activations.insert(neuron1, 0.0);
+    activations.insert(neuron2, 0.0);
+
+    commands.insert_resource(NeuralNetworkResource {
+        connection_map: nn,
+        activation_map: activations,
+    });
+}
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, Shape2dPlugin::default()))
+        .add_systems(Startup, startup)
+        .add_systems(
+            Update,
+            (
+                draw_neural_network,
+                (
+                    activation_system,
+                    activation_propagation_system,
+                    decay_neurotransmitters,
+                )
+                    .chain(),
+            ),
+        )
+        .run();
+}

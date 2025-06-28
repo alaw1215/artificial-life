@@ -1,0 +1,16 @@
+[package]
+name = "articial_life"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.15.3"
+bevy_vector_shapes = "0.9.3"
+component = "0.1.1"
+fmt = "0.1.0"
+gene_traits = { path = "gene-traits" }
+gene_derive = { path = "gene-derive" }
+inventory = "0.3.20"
+hashed-type-def = { version = "0.1.2", features = ["derive"] }
+concat-idents = "1.1.5"
+rand = "0.9.1"

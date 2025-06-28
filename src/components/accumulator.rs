@@ -1,0 +1,93 @@
+use bevy::ecs::system::Commands;
+use bevy::prelude::Component;
+use gene_traits::{AminoAcid, get_promoter, register_gene};
+use hashed_type_def::HashedTypeDef;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
+use crate::GeneRegister;
+
+use super::Dopamine;
+
+fn accumulator_sequence_parser<T>(gene: &[AminoAcid]) -> Accumulator<T>
+where
+    T: Send,
+    T: Sync,
+    T: Debug,
+    T: 'static,
+{
+    let mut buildup_rate = 0;
+    for i in 0..8 {
+        let current_part = match &gene[i] {
+            AminoAcid::A => 0,
+            AminoAcid::C => 1,
+            AminoAcid::T => 2,
+            AminoAcid::G => 3,
+        } << (i * 2);
+
+        buildup_rate += current_part;
+    }
+
+    Accumulator::new(0, buildup_rate)
+}
+
+fn accumulator_parser<T>(gene: &[AminoAcid], mut commands: Commands)
+where
+    T: Send,
+    T: Sync,
+    T: Debug,
+    T: 'static,
+{
+    let accumulator: Accumulator<T> = accumulator_sequence_parser(gene);
+    commands.spawn(accumulator);
+}
+
+#[cfg(test)]
+mod test {
+    use gene_traits::AminoAcid;
+
+    use crate::components::Dopamine;
+
+    use super::accumulator_sequence_parser;
+
+    fn parse_accumulator_gene() {
+        let expected = 4;
+
+        let sequence = [AminoAcid::A, AminoAcid::C, AminoAcid::A, AminoAcid::A];
+
+        let accumulator = accumulator_sequence_parser::<Dopamine>(&sequence);
+
+        assert_eq!(accumulator.buildup_rate, expected);
+    }
+}
+
+#[derive(Component, Default, Debug, HashedTypeDef)]
+pub struct Accumulator<T>
+where
+    T: Send,
+    T: Sync,
+    T: Debug,
+{
+    pub level: u32,
+    pub buildup_rate: u32,
+    pub _phantom: PhantomData<T>,
+}
+
+impl<T> Accumulator<T>
+where
+    T: Send,
+    T: Sync,
+    T: Debug,
+{
+    pub fn new(level: u32, buildup_rate: u32) -> Self {
+        Self {
+            level,
+            buildup_rate,
+            _phantom: PhantomData::default(),
+        }
+    }
+}
+
+register_gene!(Accumulator<Dopamine>, accumulator_parser<Dopamine>, {
+    crate::config::PROMOTER_SIZE
+});
