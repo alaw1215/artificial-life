@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 
 use crate::GeneRegister;
 
-use super::Dopamine;
+use crate::neurotransmitters::*;
 
 fn accumulator_sequence_parser<T>(gene: &[AminoAcid]) -> Accumulator<T>
 where
@@ -42,25 +42,6 @@ where
     commands.spawn(accumulator);
 }
 
-#[cfg(test)]
-mod test {
-    use gene_traits::AminoAcid;
-
-    use crate::components::Dopamine;
-
-    use super::accumulator_sequence_parser;
-
-    fn parse_accumulator_gene() {
-        let expected = 4;
-
-        let sequence = [AminoAcid::A, AminoAcid::C, AminoAcid::A, AminoAcid::A];
-
-        let accumulator = accumulator_sequence_parser::<Dopamine>(&sequence);
-
-        assert_eq!(accumulator.buildup_rate, expected);
-    }
-}
-
 #[derive(Component, Default, Debug, HashedTypeDef)]
 pub struct Accumulator<T>
 where
@@ -91,3 +72,32 @@ where
 register_gene!(Accumulator<Dopamine>, accumulator_parser<Dopamine>, {
     crate::config::PROMOTER_SIZE
 });
+
+register_gene!(Accumulator<Seratonin>, accumulator_parser<Seratonin>, {
+    crate::config::PROMOTER_SIZE
+});
+
+register_gene!(
+    Accumulator<Norepinephrine>,
+    accumulator_parser<Norepinephrine>,
+    { crate::config::PROMOTER_SIZE }
+);
+
+#[cfg(test)]
+mod test {
+    use gene_traits::AminoAcid;
+
+    use crate::components::Dopamine;
+
+    use super::accumulator_sequence_parser;
+
+    fn parse_accumulator_gene() {
+        let expected = 4;
+
+        let sequence = [AminoAcid::A, AminoAcid::C, AminoAcid::A, AminoAcid::A];
+
+        let accumulator = accumulator_sequence_parser::<Dopamine>(&sequence);
+
+        assert_eq!(accumulator.buildup_rate, expected);
+    }
+}
