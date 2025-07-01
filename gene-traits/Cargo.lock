@@ -74,6 +74,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64a98073b662800c2dbd9c31675fc1638ee701e8874f8b289d9d4a80a002cdfa"
 dependencies = [
  "hashed-type-def-core",
+ "hashed-type-def-procmacro",
 ]
 
 [[package]]

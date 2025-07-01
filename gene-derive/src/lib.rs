@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use std::marker::PhantomData;
 
-use gene_traits::AminoAcid;
+use gene_traits::Nucleotide;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use rand::SeedableRng;
@@ -10,8 +10,8 @@ use rand::rngs::StdRng;
 use rand::{self, RngCore};
 use syn::{Data, DeriveInput, Fields, Meta, Type, parse_macro_input};
 
-fn get_promoter(type_id: u128, promoter_size: u8) -> Vec<AminoAcid> {
-    let mut promoter: Vec<AminoAcid> = vec![];
+fn get_promoter(type_id: u128, promoter_size: u8) -> Vec<Nucleotide> {
+    let mut promoter: Vec<Nucleotide> = vec![];
 
     let seed = type_id;
     // Well.. I'd like a 128-bit seed, but 64 bits will do just fine
@@ -20,10 +20,10 @@ fn get_promoter(type_id: u128, promoter_size: u8) -> Vec<AminoAcid> {
     for _ in 0..promoter_size {
         let random_num: u64 = rng.next_u64();
         promoter.push(match random_num % 4 {
-            0 => AminoAcid::A,
-            1 => AminoAcid::C,
-            2 => AminoAcid::T,
-            _ => AminoAcid::G,
+            0 => Nucleotide::A,
+            1 => Nucleotide::C,
+            2 => Nucleotide::T,
+            _ => Nucleotide::G,
         });
     }
 

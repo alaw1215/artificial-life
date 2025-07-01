@@ -90,6 +90,7 @@ name = "gene_traits"
 version = "0.1.0"
 dependencies = [
  "concat-idents",
+ "hashed-type-def",
  "inventory",
  "proc-macro2",
  "quote",

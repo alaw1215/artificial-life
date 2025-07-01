@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use components::accumulator::Accumulator;
-use gene_traits::AminoAcid;
+use gene_traits::Nucleotide;
 
 use std::fmt::Debug;
 
@@ -10,9 +10,9 @@ use crate::components::*;
 mod config;
 
 struct GeneRegister<const N: usize> {
-    promoter: [AminoAcid; N],
+    promoter: [Nucleotide; N],
     type_str: &'static str,
-    parser: fn(&[AminoAcid], Commands),
+    parser: fn(&[Nucleotide], Commands),
 }
 
 inventory::collect!(GeneRegister<4>);

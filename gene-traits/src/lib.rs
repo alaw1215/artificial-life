@@ -3,34 +3,34 @@ use quote::quote;
 use rand::Rng;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum AminoAcid {
+pub enum Nucleotide {
     A,
     C,
     T,
     G,
 }
 
-impl AminoAcid {
-    pub fn sample<R: Rng + ?Sized>(rng: &mut R) -> AminoAcid {
+impl Nucleotide {
+    pub fn sample<R: Rng + ?Sized>(rng: &mut R) -> Nucleotide {
         match rng.random_range(0..=3) {
-            0 => AminoAcid::A,
-            1 => AminoAcid::C,
-            2 => AminoAcid::T,
-            _ => AminoAcid::G,
+            0 => Nucleotide::A,
+            1 => Nucleotide::C,
+            2 => Nucleotide::T,
+            _ => Nucleotide::G,
         }
     }
 }
 
-pub const fn get_promoter<const N: usize, T: HashedTypeDef>() -> [AminoAcid; N] {
-    let mut arr = [AminoAcid::A; N];
+pub const fn get_promoter<const N: usize, T: HashedTypeDef>() -> [Nucleotide; N] {
+    let mut arr = [Nucleotide::A; N];
     let hash = T::TYPE_HASH_NATIVE;
     let mut i = 0;
     while i < N {
         arr[i] = match hash & (0x3 << i) % 4 {
-            0 => AminoAcid::A,
-            1 => AminoAcid::C,
-            2 => AminoAcid::T,
-            _ => AminoAcid::G,
+            0 => Nucleotide::A,
+            1 => Nucleotide::C,
+            2 => Nucleotide::T,
+            _ => Nucleotide::G,
         };
         i += 1;
     }
@@ -47,13 +47,13 @@ macro_rules! register_gene {
     }
 }
 
-impl quote::ToTokens for AminoAcid {
+impl quote::ToTokens for Nucleotide {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         tokens.extend(match self {
-            AminoAcid::A => quote! { AminoAcid::A },
-            AminoAcid::C => quote! { AminoAcid::C },
-            AminoAcid::T => quote! { AminoAcid::T },
-            AminoAcid::G => quote! { AminoAcid::G },
+            Nucleotide::A => quote! { AminoAcid::A },
+            Nucleotide::C => quote! { AminoAcid::C },
+            Nucleotide::T => quote! { AminoAcid::T },
+            Nucleotide::G => quote! { AminoAcid::G },
         });
     }
 }
