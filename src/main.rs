@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use components::accumulator::Accumulator;
+use evalexpr::build_operator_tree;
 use gene_traits::Nucleotide;
 
 use std::fmt::Debug;
@@ -18,7 +19,7 @@ struct GeneRegister<const N: usize> {
 inventory::collect!(GeneRegister<4>);
 
 fn startup(mut commands: Commands) {
-    let activators = [0] //, 1, 2]
+    let activators = [0]
         .map(|_| {
             commands
                 .spawn((
@@ -27,7 +28,7 @@ fn startup(mut commands: Commands) {
                         ..default()
                     },
                     Activation {
-                        activation: |n: &Neuron| n.dopamine >= 100,
+                        activation: build_operator_tree( "dopamine >= 100"),
                     },
                     Synapse { active: false },
                     Accumulator::<Dopamine>::new(100, 5),
@@ -50,7 +51,7 @@ fn startup(mut commands: Commands) {
         },
         Synapse { active: false },
         Activation {
-            activation: |n: &Neuron| n.dopamine >= 100,
+            activation: build_operator_tree("dopamine >= 100"),
         },
         UpdateFunction::default(),
     ));
