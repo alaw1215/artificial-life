@@ -4,7 +4,6 @@ pub mod neuron;
 pub mod neurotransmitters;
 pub mod receptor;
 
-pub use super::accumulator::Accumulator;
 pub use super::activation::Activation;
 pub use super::neuron::*;
 pub use super::neurotransmitters::*;

@@ -1,7 +1,7 @@
 use bevy::ecs::system::Commands;
 use bevy::prelude::Component;
 use gene_traits::amino_acid::AminoAcid;
-use gene_traits::{dna::Nucleotide, dna::get_promoter, register_gene};
+use gene_traits::{dna::get_promoter, register_gene};
 use hashed_type_def::HashedTypeDef;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -18,8 +18,8 @@ where
     T: 'static,
 {
     let mut buildup_rate = 0;
-    for i in 0..8 {
-        let current_part: u32 = (Into::<u8>::into(gene[i]) as u32) << (i * 2);
+    for i in 0..gene.len() {
+        let current_part: u32 = Into::<u8>::into(gene[i]) as u32;
 
         buildup_rate += current_part;
     }
@@ -87,10 +87,11 @@ mod test {
 
     use super::accumulator_sequence_parser;
 
+    #[test]
     pub fn parse_accumulator_gene() {
         let expected = 4;
 
-        let sequence = [AminoAcid::A, AminoAcid::R, AminoAcid::A, AminoAcid::A];
+        let sequence = [AminoAcid::R, AminoAcid::R, AminoAcid::R, AminoAcid::R];
 
         let accumulator = accumulator_sequence_parser::<Dopamine>(&sequence);
 
