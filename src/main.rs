@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use components::accumulator::Accumulator;
 use evalexpr::build_operator_tree;
-use gene_traits::Nucleotide;
+use gene_traits::{amino_acid::AminoAcid, dna};
 
 use std::fmt::Debug;
 
@@ -11,9 +11,9 @@ use crate::components::*;
 mod config;
 
 struct GeneRegister<const N: usize> {
-    promoter: [Nucleotide; N],
+    promoter: [dna::Nucleotide; N],
     type_str: &'static str,
-    parser: fn(&[Nucleotide], Commands),
+    parser: fn(&[AminoAcid], Commands),
 }
 
 inventory::collect!(GeneRegister<4>);
@@ -28,7 +28,7 @@ fn startup(mut commands: Commands) {
                         ..default()
                     },
                     Activation {
-                        activation: build_operator_tree( "dopamine >= 100"),
+                        activation: build_operator_tree("dopamine >= 100"),
                     },
                     Synapse { active: false },
                     Accumulator::<Dopamine>::new(100, 5),

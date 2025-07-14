@@ -1,6 +1,7 @@
 use bevy::ecs::system::Commands;
 use bevy::prelude::Component;
-use gene_traits::{Nucleotide, get_promoter, register_gene};
+use gene_traits::amino_acid::AminoAcid;
+use gene_traits::{dna::Nucleotide, dna::get_promoter, register_gene};
 use hashed_type_def::HashedTypeDef;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -9,7 +10,7 @@ use crate::GeneRegister;
 
 use crate::neurotransmitters::*;
 
-fn accumulator_sequence_parser<T>(gene: &[Nucleotide]) -> Accumulator<T>
+fn accumulator_sequence_parser<T>(gene: &[AminoAcid]) -> Accumulator<T>
 where
     T: Send,
     T: Sync,
@@ -18,12 +19,7 @@ where
 {
     let mut buildup_rate = 0;
     for i in 0..8 {
-        let current_part = match &gene[i] {
-            Nucleotide::A => 0,
-            Nucleotide::C => 1,
-            Nucleotide::T => 2,
-            Nucleotide::G => 3,
-        } << (i * 2);
+        let current_part: u32 = (Into::<u8>::into(gene[i]) as u32) << (i * 2);
 
         buildup_rate += current_part;
     }
@@ -31,7 +27,7 @@ where
     Accumulator::new(0, buildup_rate)
 }
 
-fn accumulator_parser<T>(gene: &[Nucleotide], mut commands: Commands)
+fn accumulator_parser<T>(gene: &[AminoAcid], mut commands: Commands)
 where
     T: Send,
     T: Sync,
@@ -85,16 +81,16 @@ register_gene!(
 
 #[cfg(test)]
 mod test {
-    use gene_traits::Nucleotide;
+    use gene_traits::amino_acid::AminoAcid;
 
     use crate::components::Dopamine;
 
     use super::accumulator_sequence_parser;
 
-    fn parse_accumulator_gene() {
+    pub fn parse_accumulator_gene() {
         let expected = 4;
 
-        let sequence = [Nucleotide::A, Nucleotide::C, Nucleotide::A, Nucleotide::A];
+        let sequence = [AminoAcid::A, AminoAcid::R, AminoAcid::A, AminoAcid::A];
 
         let accumulator = accumulator_sequence_parser::<Dopamine>(&sequence);
 

@@ -15,7 +15,12 @@ impl Activation {
             "dopamine" => int neuron.dopamine,
             "seratonin" => int neuron.seratonin,
             "norepinephrine" => int neuron.norepinephrine
-        }.unwrap();
-        self.activation.as_ref().expect("There must be an activation function").eval_boolean_with_context(&context).expect("Function must return a valid boolean")
+        }
+        .unwrap();
+        self.activation
+            .as_ref()
+            .expect("There must be an activation function")
+            .eval_boolean_with_context(&context)
+            .expect("Function must return a valid boolean")
     }
 }
