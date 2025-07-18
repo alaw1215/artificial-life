@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use components::accumulator::Accumulator;
 use evalexpr::build_operator_tree;
-use gene_traits::{amino_acid::AminoAcid, dna};
+use gene_traits::{amino_acid::AminoAcid, dna::{get_hash, get_header}};
+use hashed_type_def::HashedTypeDef;
 
 use std::fmt::Debug;
 
@@ -10,15 +11,27 @@ use crate::components::*;
 
 mod config;
 
-struct GeneRegister<const N: usize> {
-    promoter: [dna::Nucleotide; N],
+/**
+ * GeneRegister registers the promoter sequence, a descriptive type name,
+ * and a parsing function that takes the AminoAcid sequence and outputs the number of Amino Acids consumed during parsing
+ */
+#[derive(Debug)]
+struct ComponentRegister<const N: usize> {
+    header: [AminoAcid; N],
+    type_hash: u128,
     type_str: &'static str,
-    parser: fn(&[AminoAcid], Commands),
+    /**
+     * Parser must return the number of amino acids consumed so that a long multi-gene strand can be processed
+     */
+    parser: fn(&[AminoAcid], Entity, Commands) -> usize,
 }
 
-inventory::collect!(GeneRegister<4>);
+inventory::collect!(ComponentRegister<4>);
 
 fn startup(mut commands: Commands) {
+    for c in inventory::iter::<ComponentRegister<4>> {
+        println!("{:?}", c);
+    }
     let activators = [0]
         .map(|_| {
             commands
