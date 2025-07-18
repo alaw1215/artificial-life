@@ -25,6 +25,7 @@ where
     let gene_end: [AminoAcid; 4] = [AminoAcid::UNKNOWN; 4];
 
     let mut gene_iter = gene.iter();
+    let mut consumed = gene.len();
     let mut get_last = || {
         while let Some(acid) = gene_iter.next() {
             if last_index < 3 {
@@ -37,6 +38,7 @@ where
             }
 
             if gene_end == slice_window {
+                consumed = last_index + 1;
                 last_index = last_index - 3;
                 return last_index;
             }
@@ -52,7 +54,7 @@ where
         buildup_rate += current_part; // Since each amino acid can represent a value from 0-19, this seemed the simplest way to approach this
     }
 
-    (Accumulator::new(0, buildup_rate), gene_ref.len())
+    (Accumulator::new(0, buildup_rate), consumed)
 }
 
 fn accumulator_parser<T>(gene: &[AminoAcid], entity: Entity, mut commands: Commands) -> usize
@@ -98,17 +100,23 @@ where
 #[allow(dead_code)]
 struct DopamineAccumulator(Accumulator<Dopamine>);
 
-register_gene!(Accumulator<Dopamine>, {DopamineAccumulator::TYPE_HASH_NATIVE}, accumulator_parser<Dopamine>, {
-    crate::config::PROMOTER_SIZE
-});
+register_gene!(
+    Accumulator<Dopamine>,
+    { DopamineAccumulator::TYPE_HASH_NATIVE },
+    accumulator_parser<Dopamine>,
+    { crate::config::PROMOTER_SIZE }
+);
 
 #[derive(HashedTypeDef)]
 #[allow(dead_code)]
 struct SeratoninAccumulator(Accumulator<Seratonin>);
 
-register_gene!(Accumulator<Seratonin>, {SeratoninAccumulator::TYPE_HASH_NATIVE}, accumulator_parser<Seratonin>, {
-    crate::config::PROMOTER_SIZE
-});
+register_gene!(
+    Accumulator<Seratonin>,
+    { SeratoninAccumulator::TYPE_HASH_NATIVE },
+    accumulator_parser<Seratonin>,
+    { crate::config::PROMOTER_SIZE }
+);
 
 #[derive(HashedTypeDef)]
 #[allow(dead_code)]
@@ -116,7 +124,7 @@ struct NorepinephrineAccumulator(Accumulator<Norepinephrine>);
 
 register_gene!(
     Accumulator<Norepinephrine>,
-    {NorepinephrineAccumulator::TYPE_HASH_NATIVE},
+    { NorepinephrineAccumulator::TYPE_HASH_NATIVE },
     accumulator_parser<Norepinephrine>,
     { crate::config::PROMOTER_SIZE }
 );
@@ -144,21 +152,17 @@ mod test {
             AminoAcid::UNKNOWN,
         ];
 
-        let (accumulator, _) = accumulator_sequence_parser::<Dopamine>(&sequence);
+        let (accumulator, consumed) = accumulator_sequence_parser::<Dopamine>(&sequence);
 
         assert_eq!(accumulator.buildup_rate, expected);
+        assert_eq!(consumed, 8);
     }
 
     #[test]
     pub fn parse_accumulator_gene_no_tata() {
         let expected = 4;
 
-        let sequence = [
-            AminoAcid::R,
-            AminoAcid::R,
-            AminoAcid::R,
-            AminoAcid::R,
-        ];
+        let sequence = [AminoAcid::R, AminoAcid::R, AminoAcid::R, AminoAcid::R];
 
         let (accumulator, _) = accumulator_sequence_parser::<Dopamine>(&sequence);
 
@@ -179,9 +183,10 @@ mod test {
             AminoAcid::UNKNOWN,
         ];
 
-        let (accumulator, _) = accumulator_sequence_parser::<Dopamine>(&sequence);
+        let (accumulator, consumed) = accumulator_sequence_parser::<Dopamine>(&sequence);
 
         assert_eq!(accumulator.buildup_rate, expected);
+        assert_eq!(consumed, 7);
     }
 
     #[test]
@@ -200,9 +205,10 @@ mod test {
             AminoAcid::R,
         ];
 
-        let (accumulator, _) = accumulator_sequence_parser::<Dopamine>(&sequence);
+        let (accumulator, consumed) = accumulator_sequence_parser::<Dopamine>(&sequence);
 
         assert_eq!(accumulator.buildup_rate, expected);
+        assert_eq!(consumed, 9);
     }
 
     #[test]
@@ -222,8 +228,9 @@ mod test {
             AminoAcid::R,
         ];
 
-        let (accumulator, _) = accumulator_sequence_parser::<Dopamine>(&sequence);
+        let (accumulator, consumed) = accumulator_sequence_parser::<Dopamine>(&sequence);
 
         assert_eq!(accumulator.buildup_rate, expected);
+        assert_eq!(consumed, 8);
     }
 }

@@ -1,5 +1,5 @@
 pub mod dna {
-    use hashed_type_def::{HashedTypeDef, add_hashed_type_def};
+    use hashed_type_def::HashedTypeDef;
     use quote::quote;
     use rand::Rng;
 
