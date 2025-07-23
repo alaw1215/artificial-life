@@ -1,5 +1,6 @@
 pub mod accumulator;
 pub mod activation;
+pub mod gene_reader;
 pub mod neuron;
 pub mod neurotransmitters;
 pub mod receptor;
