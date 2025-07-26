@@ -15,6 +15,7 @@ mod systems;
 
 use crate::{
     component_register::ComponentRegister,
+    config::PROMOTER_SIZE,
     systems::neuron_updates::{accumulator_buildup, receptor, update_neuron, update_synapse},
 };
 use crate::{components::*, systems::neurotransmitter_updates::update_dopamine};
@@ -22,7 +23,7 @@ use crate::{components::*, systems::neurotransmitter_updates::update_dopamine};
 mod config;
 
 fn startup(mut commands: Commands) {
-    for c in inventory::iter::<ComponentRegister<4>> {
+    for c in inventory::iter::<ComponentRegister<PROMOTER_SIZE>> {
         println!("{:?}", c);
     }
     let activators = [0]
