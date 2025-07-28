@@ -1,4 +1,4 @@
-use bevy::ecs::{entity::Entity, system::Commands};
+use bevy::ecs::system::EntityCommands;
 use gene_traits::amino_acid::AminoAcid;
 use inventory;
 
@@ -14,7 +14,7 @@ pub struct ComponentRegister<const N: usize> {
     /**
      * Parser must return the number of amino acids consumed so that a long multi-gene strand can be processed
      */
-    pub parser: fn(&[AminoAcid], Entity, Commands) -> usize,
+    pub parser: fn(&[AminoAcid], EntityCommands) -> usize,
 }
 
 inventory::collect!(ComponentRegister<4>);

@@ -1,5 +1,5 @@
 use bevy::ecs::entity::Entity;
-use bevy::ecs::system::Commands;
+use bevy::ecs::system::{Commands, EntityCommands};
 use bevy::prelude::Component;
 use gene_traits::amino_acid::AminoAcid;
 use gene_traits::{dna::get_header, mul, register_gene};
@@ -57,7 +57,7 @@ where
     (Accumulator::new(0, buildup_rate), consumed)
 }
 
-fn accumulator_parser<T>(gene: &[AminoAcid], entity: Entity, mut commands: Commands) -> usize
+fn accumulator_parser<T>(gene: &[AminoAcid], mut commands: EntityCommands) -> usize
 where
     T: Send,
     T: Sync,
@@ -65,10 +65,10 @@ where
     T: 'static,
 {
     let (accumulator, consumed) = accumulator_sequence_parser::<T>(gene);
-    println!("Adding in an accumulator");
+    println!("Adding in an accumulator: {:?}", accumulator);
     //commands.get_entity(entity).unwrap().insert(accumulator);
 
-    commands.spawn(accumulator);
+    commands.insert(accumulator);
     consumed
 }
 
