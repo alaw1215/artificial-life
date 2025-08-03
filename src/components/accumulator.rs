@@ -66,7 +66,6 @@ where
 {
     let (accumulator, consumed) = accumulator_sequence_parser::<T>(gene);
     println!("Adding in an accumulator: {:?}", accumulator);
-    //commands.get_entity(entity).unwrap().insert(accumulator);
 
     commands.insert(accumulator);
     consumed
