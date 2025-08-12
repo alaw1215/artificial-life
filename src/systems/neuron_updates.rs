@@ -5,6 +5,7 @@ use crate::components::{
     Activation, Neuron, Receptor, Synapse, UpdateFunction, accumulator::Accumulator,
 };
 
+// The neuron should update in a way that neurotransmitters are both accepted by receptors, and degraded by some internal function
 pub fn update_neuron(mut neurons: Query<(&UpdateFunction, &mut Neuron)>) {
     for (update, mut neuron) in neurons.iter_mut() {
         (update.func)(&mut neuron); // This has to be some arbitrary function that gets modified by genetics
