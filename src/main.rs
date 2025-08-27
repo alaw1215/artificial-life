@@ -1,13 +1,6 @@
 use bevy::prelude::*;
 use components::accumulator::Accumulator;
 use evalexpr::build_operator_tree;
-use gene_traits::{
-    amino_acid::AminoAcid,
-    dna::{get_hash, get_header},
-};
-use hashed_type_def::HashedTypeDef;
-
-use std::fmt::Debug;
 
 mod component_register;
 mod components;
@@ -35,7 +28,7 @@ fn startup(mut commands: Commands) {
                         ..default()
                     },
                     Activation {
-                        activation: build_operator_tree("dopamine >= 100"),
+                        activation: build_operator_tree("dopamine >= 100").expect("This is a valid expression"),
                     },
                     Synapse { active: false },
                     Accumulator::<Dopamine>::new(100, 5),
@@ -58,7 +51,7 @@ fn startup(mut commands: Commands) {
         },
         Synapse { active: false },
         Activation {
-            activation: build_operator_tree("dopamine >= 100"),
+            activation: build_operator_tree("dopamine >= 100").expect("This is a valid expression"),
         },
         UpdateFunction::default(),
     ));
@@ -70,7 +63,7 @@ fn startup(mut commands: Commands) {
 // I guess there needs to be a neuron "body" component as well then?
 // ... This is complicated.  There are several neurotransmitter interactions that can occur.  Each
 // pair of neurotransmitters must have systems to define the interactions.  May have to limit the
-// amount of interactions.
+// number of interactions.
 //
 // fn update_internal_state<T>()
 

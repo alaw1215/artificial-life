@@ -1,17 +1,15 @@
 use bevy::ecs::{
-    query::With,
     system::{Commands, Query},
 };
 use generic_levenshtein;
-
 use crate::{
     component_register::ComponentRegister,
-    components::amino_acid_reader::{AminoAcidChain, AminoAcidReader},
+    components::amino_acid_reader::AminoAcidChain,
     config::PROMOTER_SIZE,
 };
 
 pub fn parse_amino_acid_strand(
-    query: Query<&AminoAcidChain, With<AminoAcidReader>>,
+    query: Query<&AminoAcidChain>,
     mut commands: Commands,
 ) {
     for acid in query.iter() {
@@ -48,6 +46,14 @@ pub fn parse_amino_acid_strand(
     }
 }
 
+#[macro_export]
+macro_rules! amino_acid_header {
+    ($ty:ty) => {{
+        const HASH: u128 = get_hash::<$ty>();
+        get_header::<4, 12, HASH>()
+    }}
+}
+
 #[cfg(test)]
 mod test {
     use bevy::{
@@ -55,7 +61,7 @@ mod test {
         ecs::world::World,
     };
     use gene_traits::amino_acid::AminoAcid;
-
+    use gene_traits::dna::{get_hash, get_header};
     use crate::{
         components::{
             Norepinephrine,
@@ -64,6 +70,8 @@ mod test {
         },
         systems::ribosome::parse_amino_acid_strand,
     };
+    use crate::components::Activation;
+    use crate::components::activation::ActivationTag;
 
     #[test]
     fn parsed_valid_amino_acid_strand() {
@@ -94,6 +102,40 @@ mod test {
         let world: &mut World = app.world_mut();
 
         let mut query = world.query::<&Accumulator<Norepinephrine>>();
+
+        assert!(query.iter(app.world()).len() > 0);
+    }
+
+    #[test]
+    fn parsed_valid_activation() {
+        let header = amino_acid_header!(ActivationTag);
+        let sequence = [
+            header[0],
+            header[1],
+            header[2],
+            header[3],
+            AminoAcid::R,
+            AminoAcid::R,
+            AminoAcid::R,
+            AminoAcid::R,
+            AminoAcid::UNKNOWN,
+            AminoAcid::UNKNOWN,
+            AminoAcid::UNKNOWN,
+            AminoAcid::UNKNOWN,
+        ];
+
+        let mut app = App::new();
+
+        app.add_systems(Update, parse_amino_acid_strand);
+
+        app.world_mut()
+            .spawn((AminoAcidReader, AminoAcidChain(sequence.to_vec())));
+
+        app.update();
+
+        let world: &mut World = app.world_mut();
+
+        let mut query = world.query::<&Activation>();
 
         assert!(query.iter(app.world()).len() > 0);
     }

@@ -34,7 +34,7 @@ pub mod dna {
         let mut i = 0;
         while i < U {
             // Ok, I feel like I need to explain this, since it took so long to get here.
-            // The hash needs to be shifted by a byte each loop, and then masked with 2 bits.
+            // The hash needs to be shifted by a byte each loop and then masked with 2 bits.
             // Those 2 bits represent the DNA Nucleotide.
             nuc_arr[i] = match ((hash >> (i * 8)) & 0x3) % 4 {
                 0 => Nucleotide::A,
@@ -54,7 +54,12 @@ pub mod dna {
                 rna_part[j] = rna::from_dna(nuc_arr[i*3 + j]);
                 j += 1;
             }
-            arr[i] = amino_acid::from_rna_triple(rna_part);
+            let next_triple = amino_acid::from_rna_triple(rna_part);
+            match next_triple {
+                AminoAcid::UNKNOWN => { arr[i] = AminoAcid::A; },
+                _ => arr[i] = next_triple
+            }
+
             i += 1;
         }
         arr

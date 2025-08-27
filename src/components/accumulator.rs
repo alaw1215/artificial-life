@@ -1,5 +1,4 @@
-use bevy::ecs::entity::Entity;
-use bevy::ecs::system::{Commands, EntityCommands};
+use bevy::ecs::system::EntityCommands;
 use bevy::prelude::Component;
 use gene_traits::amino_acid::AminoAcid;
 use gene_traits::{dna::get_header, mul, register_gene};
@@ -111,12 +110,12 @@ register_gene!(
 
 #[derive(HashedTypeDef)]
 #[allow(dead_code)]
-struct SeratoninAccumulator(Accumulator<Seratonin>);
+struct SerotoninAccumulator(Accumulator<Serotonin>);
 
 register_gene!(
     Accumulator<Seratonin>,
-    { SeratoninAccumulator::TYPE_HASH_NATIVE },
-    accumulator_parser<Seratonin>,
+    { SerotoninAccumulator::TYPE_HASH_NATIVE },
+    accumulator_parser<Serotonin>,
     { crate::config::PROMOTER_SIZE }
 );
 

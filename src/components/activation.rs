@@ -1,174 +1,147 @@
+use crate::components::expr_gene::{expr_from_amino_acids, last_idx_before_promoter};
+use crate::config::PROMOTER_SIZE;
+use crate::ComponentRegister;
 use bevy::ecs::{
     component::Component,
-    system::{Commands, EntityCommands},
+    system::EntityCommands,
 };
 use evalexpr::*;
 use gene_traits::amino_acid::AminoAcid;
-
-use crate::config::PROMOTER_SIZE;
+use gene_traits::dna::get_header;
+use gene_traits::mul;
+use gene_traits::register_gene;
+use hashed_type_def::HashedTypeDef;
 
 use super::Neuron;
+
+// Okay... this is kind of annoying, but it turns out not all types can just derive HashedTypeDef,
+// and it is possible to create a 'tag' type that can act as a 'marker' for the type in the registration macro.
+#[derive(HashedTypeDef)]
+pub struct ActivationTag {}
 
 #[derive(Component)]
 pub struct Activation {
     // Amazingly, there's an expression evaluator already.  Just need to parse the genes to strings...
-    pub activation: evalexpr::EvalexprResult<Node<DefaultNumericTypes>, DefaultNumericTypes>,
+    pub activation: Node<DefaultNumericTypes>,
 }
 
 impl Activation {
     pub fn get_activation(&self, neuron: &Neuron) -> bool {
         let context = context_map! {
             "dopamine" => int neuron.dopamine,
-            "seratonin" => int neuron.seratonin,
+            "serotonin" => int neuron.serotonin,
             "norepinephrine" => int neuron.norepinephrine
         }
-        .unwrap();
+            .unwrap();
         self.activation
-            .as_ref()
-            .expect("There must be an activation function")
+            //.as_ref()
+            //.expect("There must be an activation function")
             .eval_boolean_with_context(&context)
             .expect("Function must return a valid boolean")
     }
+
+    pub fn sequence_parser(sequence: &[AminoAcid], mut commands: EntityCommands) -> usize {
+        let last_idx = last_idx_before_promoter(sequence, PROMOTER_SIZE);
+
+        let formula = expr_from_amino_acids(&sequence[0..last_idx]);
+
+        let precompiled = build_operator_tree::<DefaultNumericTypes>(&formula)
+            .expect("Failed to precompile activation function");
+
+        let activation = Activation {
+            activation: precompiled,
+        };
+
+        commands.insert(activation);
+
+        last_idx
+    }
 }
 
-fn parse_amino_acids(sequence: &[AminoAcid]) -> String {
-    let expr = sequence
-        .windows(2)
-        .enumerate()
-        // Need to "chunk" read not read with a sliding window
-        .filter(|(idx, _)| idx % 2 == 0)
-        .map(|tpl| tpl.1)
-        // So... we kind of have to protect against point mutations that should be harmless
-        // somehow...
-        .map(|acid: &[AminoAcid]| match acid {
-            &[AminoAcid::A, AminoAcid::A] => "(",
-            &[AminoAcid::A, AminoAcid::P] => ")",
-            &[AminoAcid::A, AminoAcid::F] => "*",
-            &[AminoAcid::A, AminoAcid::M] => "/",
-            &[AminoAcid::A, AminoAcid::K] => "^",
-            &[AminoAcid::A, AminoAcid::S] => "+",
-            &[AminoAcid::A, AminoAcid::W] => "-",
-            &[AminoAcid::A, AminoAcid::T] => "%",
-            &[AminoAcid::A, AminoAcid::Y] => "<",
-            &[AminoAcid::A, AminoAcid::V] => ">",
-            &[AminoAcid::A, AminoAcid::L] => "==",
-            &[AminoAcid::A, AminoAcid::H] => ">=",
-            &[AminoAcid::A, AminoAcid::D] => "<=",
-            &[AminoAcid::A, AminoAcid::N] => "!=",
-            &[AminoAcid::A, AminoAcid::R] => "!",
-            &[AminoAcid::A, AminoAcid::I] => "math::sin",
-            &[AminoAcid::A, AminoAcid::C] => "math::cos",
-            &[AminoAcid::A, AminoAcid::E] => "math::ln",
-            &[AminoAcid::A, AminoAcid::Q] => "math::log",
-            &[AminoAcid::A, AminoAcid::G] => "math::log2",
-            &[AminoAcid::P, AminoAcid::A] => "0",
-            &[AminoAcid::P, AminoAcid::P] => "1",
-            &[AminoAcid::P, AminoAcid::F] => "2",
-            &[AminoAcid::P, AminoAcid::M] => "3",
-            &[AminoAcid::P, AminoAcid::K] => "4",
-            &[AminoAcid::P, AminoAcid::S] => "5",
-            &[AminoAcid::P, AminoAcid::W] => "6",
-            &[AminoAcid::P, AminoAcid::T] => "7",
-            &[AminoAcid::P, AminoAcid::Y] => "8",
-            &[AminoAcid::P, AminoAcid::V] => "9",
-            &[AminoAcid::F, AminoAcid::A] => "dopamine",
-            &[AminoAcid::F, AminoAcid::P] => "seratonin",
-            &[AminoAcid::F, AminoAcid::F] => "norepinephrine",
-            _ => "",
-        })
-        .collect();
-
-    expr
+pub fn activation_parser(sequence: &[AminoAcid], commands: EntityCommands) -> usize {
+    Activation::sequence_parser(sequence, commands)
 }
 
-fn activation_sequence_parser(sequence: &[AminoAcid], mut commands: EntityCommands) -> usize {
-    let last_idx = {
-        if let Some(last_idx) = sequence
-            .windows(PROMOTER_SIZE)
-            .position(|w| w.eq(&[AminoAcid::UNKNOWN; 4]))
-        {
-            last_idx
-        } else {
-            sequence.len() - 1
-        }
-    };
-
-    let formula = parse_amino_acids(&sequence[0..last_idx]);
-
-    last_idx
-}
+register_gene!(
+    Activation,
+    { ActivationTag::TYPE_HASH_NATIVE },
+    activation_parser,
+    { crate::config::PROMOTER_SIZE }
+);
 
 #[cfg(test)]
 mod tests {
-    use evalexpr::{
-        DefaultNumericTypes, EvalexprError, HashMapContext, Value, build_operator_tree,
-        context_map, eval_int_with_context,
-    };
-    use gene_traits::amino_acid::AminoAcid;
+    use evalexpr::{build_operator_tree, DefaultNumericTypes};
 
-    use crate::components::activation::parse_amino_acids;
+    use crate::components::Activation;
+
+    use bevy::app::{App, Update};
+    use bevy::ecs::world::World;
+
+    use crate::components::{Neuron, Synapse};
+    use crate::systems::neuron_updates::update_synapse;
 
     #[test]
-    fn parse_valid_function() {
-        let mut context: evalexpr::HashMapContext<DefaultNumericTypes> = context_map! {
-            "dopamine" => int 1,
-            "seratonin" => int 1,
-            "norepinephrine" => int 1
-        }
-        .unwrap();
-        // want output formula 2*dopamine - 3*seratonin + norepinephrine
-        // to get that formula, the amino acid chain should be PFAFFAAWPMAFFPASFF
-        let amino_acids = [
-            AminoAcid::P,
-            AminoAcid::F,
-            AminoAcid::A,
-            AminoAcid::F,
-            AminoAcid::F,
-            AminoAcid::A,
-            AminoAcid::A,
-            AminoAcid::W,
-            AminoAcid::P,
-            AminoAcid::M,
-            AminoAcid::A,
-            AminoAcid::F,
-            AminoAcid::F,
-            AminoAcid::P,
-            AminoAcid::A,
-            AminoAcid::S,
-            AminoAcid::F,
-            AminoAcid::F,
-        ];
+    fn integration_activation_triggers_synapse_and_resets_dopamine() {
+        let mut app = App::new();
+        app.add_systems(Update, update_synapse);
 
-        let expected = "2*dopamine-3*seratonin+norepinephrine";
-        let actual = parse_amino_acids(&amino_acids);
+        // Activation formula: dopamine > 0
+        let activation_true = Activation {
+            activation: build_operator_tree::<DefaultNumericTypes>("dopamine>0").unwrap(),
+        };
 
-        assert_eq!(expected, actual);
+        // Entity where activation should be true
+        app.world_mut().spawn((
+            Neuron {
+                dopamine: 5,
+                ..Default::default()
+            },
+            Synapse::default(),
+            activation_true,
+        ));
 
-        let precompiled = build_operator_tree::<DefaultNumericTypes>(&actual).unwrap();
+        // Activation formula: dopamine > 0 (same), but dopamine is 0, so false
+        let activation_false = Activation {
+            activation: build_operator_tree::<DefaultNumericTypes>("dopamine>0").unwrap(),
+        };
 
-        assert_eq!(precompiled.eval_int_with_context(&context), Ok(0));
-    }
+        // Entity where activation should be false
+        app.world_mut().spawn((
+            Neuron {
+                dopamine: 0,
+                ..Default::default()
+            },
+            Synapse::default(),
+            activation_false,
+        ));
 
-    // I'm violating my own "do not test third party code" here, because this is actually very
-    // important to know
-    #[test]
-    fn precompile_bad_expr() {
-        let bad_expr = "(10*2+5";
+        // Run the system
+        app.update();
 
-        let mut corrected_expr = "".to_string();
+        // Verify results
+        let world: &mut World = app.world_mut();
+        let mut query = world.query::<(&Neuron, &Synapse)>();
+        let mut saw_true = false;
+        let mut saw_false = false;
 
-        match build_operator_tree::<DefaultNumericTypes>(bad_expr) {
-            Err(EvalexprError::UnmatchedLBrace) => {
-                assert!(true);
-                corrected_expr = bad_expr.to_owned() + ")";
+        for (neuron, synapse) in query.iter(app.world()) {
+            if synapse.active {
+                saw_true = true;
+                assert_eq!(
+                    neuron.dopamine, 0,
+                    "Active synapse should reset dopamine to 0"
+                );
+            } else {
+                saw_false = true;
+                assert_eq!(
+                    neuron.dopamine, 0,
+                    "Inactive synapse should leave dopamine unchanged (expected 0)"
+                );
             }
-            _ => assert!(false),
         }
 
-        if let Ok(_) = build_operator_tree::<DefaultNumericTypes>(&corrected_expr) {
-            assert!(true);
-        } else {
-            assert!(false);
-        }
+        assert!(saw_true, "No entity had an active synapse");
+        assert!(saw_false, "No entity had an inactive synapse");
     }
 }

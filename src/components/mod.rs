@@ -5,6 +5,7 @@ pub mod gene_reader;
 pub mod neuron;
 pub mod neurotransmitters;
 pub mod receptor;
+mod expr_gene;
 
 pub use super::activation::Activation;
 pub use super::neuron::*;
