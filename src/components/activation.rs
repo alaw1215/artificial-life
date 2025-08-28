@@ -66,7 +66,7 @@ register_gene!(
     Activation,
     { ActivationTag::TYPE_HASH_NATIVE },
     activation_parser,
-    { crate::config::PROMOTER_SIZE }
+    { PROMOTER_SIZE }
 );
 
 #[cfg(test)]
