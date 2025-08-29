@@ -4,6 +4,10 @@ use bevy::ecs::system::EntityCommands;
 use gene_traits::amino_acid::AminoAcid;
 use crate::config::PROMOTER_SIZE;
 use crate::components::expr_gene::{expr_from_amino_acids, last_idx_before_promoter};
+use crate::ComponentRegister;
+use gene_traits::{mul, register_gene};
+use gene_traits::dna::get_header;
+use hashed_type_def::HashedTypeDef;
 
 #[derive(Component, Default, Debug)]
 pub struct Neuron {
@@ -19,6 +23,10 @@ pub struct Neuron {
 pub struct UpdateFunction {
     pub func: evalexpr::EvalexprResult<Node<DefaultNumericTypes>, DefaultNumericTypes>,
 }
+
+// Tag type to enable registration via register_gene!
+#[derive(HashedTypeDef)]
+pub struct UpdateFunctionTag {}
 
 impl UpdateFunction {
     pub fn eval(&self, neuron: &mut Neuron) {
@@ -61,6 +69,17 @@ impl Default for UpdateFunction {
         Self { func: build_operator_tree::<DefaultNumericTypes>("") }
     }
 }
+
+pub fn update_function_parser(sequence: &[AminoAcid], commands: EntityCommands) -> usize {
+    UpdateFunction::sequence_parser(sequence, commands)
+}
+
+register_gene!(
+    UpdateFunction,
+    { UpdateFunctionTag::TYPE_HASH_NATIVE },
+    update_function_parser,
+    { PROMOTER_SIZE }
+);
 
 // A synapse is in itself a separate entity, and each neuron can contain the same synapses for
 // different purposes.  This allows the synapse state to be propagated.
